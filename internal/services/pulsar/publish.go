@@ -4,14 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/apache/pulsar-client-go/pulsar"
 	"time"
+
+	"github.com/apache/pulsar-client-go/pulsar"
 )
 
-type publish struct {}
+type publish struct{}
+
 var Publish = publish{}
 
-func (p *publish) Fingerprint(ctx context.Context) error {
+func (p *publish) Fingerprint(ctx context.Context, uniqueHash uint64, body *[]byte) error {
 	if FingerprintProducer == nil {
 		return errors.New("fingerprint producer not initialised")
 	}
@@ -20,7 +22,8 @@ func (p *publish) Fingerprint(ctx context.Context) error {
 	defer cancel()
 
 	msg := &pulsar.ProducerMessage{
-		Payload: []byte(fmt.Sprint("Hello")),
+		Payload: *body,
+		Key:     fmt.Sprint(uniqueHash),
 	}
 
 	if _, err := FingerprintProducer.Send(ctx, msg); err != nil {
@@ -39,7 +42,7 @@ func (*publish) MouseMovements(ctx context.Context) error {
 	defer cancel()
 
 	msg := &pulsar.ProducerMessage{
-		Payload: []byte(fmt.Sprint("Hello")),
+		Payload: []byte("Hello There."),
 	}
 
 	if _, err := MouseMovementProducer.Send(ctx, msg); err != nil {
