@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/hugolhafner/passetto/pkg/messages"
 	"github.com/hugolhafner/wendigo/internal/data"
 	"github.com/hugolhafner/wendigo/internal/services/kafka"
 	"github.com/sirupsen/logrus"
 	"github.com/twmb/murmur3"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 func Fingerprint(ctx *fiber.Ctx) error {
@@ -36,17 +39,17 @@ func Fingerprint(ctx *fiber.Ctx) error {
 }
 
 func MouseMovements(ctx *fiber.Ctx) error {
-	movements := data.MouseMovements{}
+	movements := messages.MouseMovements{}
 
-	if err := ctx.BodyParser(&movements); err != nil {
+	if err := protojson.Unmarshal(ctx.Body(), &movements); err != nil {
 		return ctx.SendStatus(fiber.StatusBadRequest)
 	}
 
-	if isValid := data.ValidateStruct(movements); !isValid {
+	if len(movements.Movements) == 0 {
 		return ctx.SendStatus(fiber.StatusBadRequest)
 	}
 
-	data, err := json.Marshal(movements)
+	data, err := proto.Marshal(&movements)
 	if err != nil {
 		return err
 	}
